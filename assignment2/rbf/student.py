@@ -30,7 +30,6 @@ class RBFFeatureEncoder:
     def encode(self, state):
         samples = np.array([self.env.observation_space.sample() for _ in range(100)]) 
         self.rbf_encoder.fit(samples) 
-    
         return self.rbf_encoder.transform(samples)[0]
     @property
     def size(self):

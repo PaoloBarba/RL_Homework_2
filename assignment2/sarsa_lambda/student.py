@@ -48,7 +48,11 @@ def sarsa_lambda(env, alpha=0.2, gamma=0.99, lambda_= 0.9, initial_epsilon=1.0, 
 
             # TODO update q table and eligibility
 
-            Q[state , action] += alpha * (reward + gamma * Q[next_state,next_action] - Q[state , action])
+            delta = alpha * (reward + gamma * Q[next_state,next_action] - Q[state , action])
+            E[state, action] += 1#E[state, action]
+
+            Q += alpha*delta*E
+            E *= (gamma*lambda_)
             
 
             if not received_first_reward and reward > 0:
