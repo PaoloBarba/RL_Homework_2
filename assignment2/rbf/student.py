@@ -23,20 +23,19 @@ class VanillaFeatureEncoder:
         return self.env.observation_space.shape[0]
 
 class RBFFeatureEncoder:
-    def __init__(self, env): # modify
+    def __init__(self, env):
         self.env = env
-        # TODO init rbf encoder
-        ...
+        self.rbf_encoder = RBFSampler(gamma= 1)
 
-    def encode(self, state): # modify
-        # TODO use the rbf encoder to return the features
-        return ...
-
+    def encode(self, state):
+        samples = np.array([self.env.observation_space.sample() for _ in range(100)]) 
+        self.rbf_encoder.fit(samples) 
+    
+        return self.rbf_encoder.transform(samples)[0]
     @property
-    def size(self): # modify
-        # TODO return the number of features
-        return ...
-
+    def size(self):
+        return self.rbf_encoder.n_components
+    
 class TDLambda_LVFA:
     def __init__(self, env, feature_encoder_cls=RBFFeatureEncoder, alpha=0.01, alpha_decay=1, 
                  gamma=0.9999, epsilon=0.3, epsilon_decay=0.995, final_epsilon=0.2, lambda_=0.9): # modify if you want (e.g. for forward view)
@@ -60,9 +59,17 @@ class TDLambda_LVFA:
     def update_transition(self, s, action, s_prime, reward, done): # modify
         s_feats = self.feature_encoder.encode(s)
         s_prime_feats = self.feature_encoder.encode(s_prime)
-        # TODO update the weights
-        self.weights[action] += ...
-        
+
+        ## Compute the TD error
+        delta = reward + self.gamma * self.Q(s_prime_feats)[action] - self.Q(s_feats)[action]
+
+        # Update eligibility traces
+        self.traces *= self.lambda_ * self.gamma
+        self.traces[action] += s_feats
+
+        # Update weights using TD error and eligibility traces
+        self.weights -= self.alpha * delta * self.traces
+                
     def update_alpha_epsilon(self): # do not touch
         self.epsilon = max(self.final_epsilon, self.epsilon*self.epsilon_decay)
         self.alpha = self.alpha*self.alpha_decay

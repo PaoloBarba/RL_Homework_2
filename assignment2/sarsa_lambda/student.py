@@ -5,8 +5,12 @@ from tqdm import tqdm
 
 
 def epsilon_greedy_action(env, Q, state, epsilon):
-    # TODO choose the action with epsilon-greedy strategy
-    action = ...
+    # TODO choose the action with epsilon-greedy strategy  
+
+    if np.random.rand() > epsilon:
+        action = np.argmax(Q[state, :]) 
+    else:
+        action = env.action_space.sample()
     return action
 
 
@@ -43,7 +47,9 @@ def sarsa_lambda(env, alpha=0.2, gamma=0.99, lambda_= 0.9, initial_epsilon=1.0, 
             next_action = epsilon_greedy_action(env, Q, next_state, epsilon)
 
             # TODO update q table and eligibility
-            ...
+
+            Q[state , action] += alpha * (reward + gamma * Q[next_state,next_action] - Q[state , action])
+            
 
             if not received_first_reward and reward > 0:
                 received_first_reward = True
