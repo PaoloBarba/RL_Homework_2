@@ -25,19 +25,31 @@ class VanillaFeatureEncoder:
 class RBFFeatureEncoder:
     def __init__(self, env):
         self.env = env
-        self.rbf_encoder = RBFSampler(gamma= 1)
+        self.num_rbf = 10
+        self.low_x =  env.observation_space.low[0]
+        self.low_y =  env.observation_space.low[1]
+        self.high_x = env.observation_space.high[0]
+        self.high_y = env.observation_space.high[1]
+
+        self.centers_x = np.linspace(self.low_x, self.high_x, self.num_rbf)
+        self.centers_y = np.linspace(self.low_y, self.high_y, self.num_rbf)
+        
+        self.xs = np.meshgrid(self.centers_x, self.centers_y)[0].reshape(-1)
+        self.ys = np.meshgrid(self.centers_x, self.centers_y)[1].reshape(-1)
+
+        self.centers = np.stack([self.xs , self.ys] , axis = 1 )
+        self.sigma_sq = 0.1
 
     def encode(self, state):
-        samples = np.array([self.env.observation_space.sample() for _ in range(100)]) 
-        self.rbf_encoder.fit(samples) 
-        return self.rbf_encoder.transform(samples)[0]
+        rbf_values = np.exp(-np.linalg.norm(state - self.centers, axis = 1) ** 2 / (2 * self.sigma_sq ** 2))
+        return rbf_values
     @property
     def size(self):
-        return self.rbf_encoder.n_components
+        return  self.num_rbf**2
     
 class TDLambda_LVFA:
     def __init__(self, env, feature_encoder_cls=RBFFeatureEncoder, alpha=0.01, alpha_decay=1, 
-                 gamma=0.9999, epsilon=0.3, epsilon_decay=0.995, final_epsilon=0.2, lambda_=0.9): # modify if you want (e.g. for forward view)
+                gamma=0.999, epsilon=0.3, epsilon_decay=0.995, final_epsilon=0.2, lambda_=0.9): # modify if you want (e.g. for forward view)
         self.env = env
         self.feature_encoder = feature_encoder_cls(env)
         self.shape = (self.env.action_space.n, self.feature_encoder.size)
@@ -54,21 +66,21 @@ class TDLambda_LVFA:
     def Q(self, feats):
         feats = feats.reshape(-1,1)
         return self.weights@feats
-    
     def update_transition(self, s, action, s_prime, reward, done): # modify
         s_feats = self.feature_encoder.encode(s)
         s_prime_feats = self.feature_encoder.encode(s_prime)
-
-        ## Compute the TD error
-        delta = reward + self.gamma * self.Q(s_prime_feats)[action] - self.Q(s_feats)[action]
-
-        # Update eligibility traces
-        self.traces *= self.lambda_ * self.gamma
+        # TODO update the weights
+        
+        # Compute the td error
+        delta = reward + (1-done)*self.gamma*self.Q(s_prime_feats).max() - self.Q(s_feats)[action]
+        
+        # Update traces
+        self.traces *= self.gamma*self.lambda_
         self.traces[action] += s_feats
 
-        # Update weights using TD error and eligibility traces
-        self.weights -= self.alpha * delta * self.traces
-                
+        # Update weights
+        self.weights[action] += self.alpha * delta * self.traces[action]
+
     def update_alpha_epsilon(self): # do not touch
         self.epsilon = max(self.final_epsilon, self.epsilon*self.epsilon_decay)
         self.alpha = self.alpha*self.alpha_decay
