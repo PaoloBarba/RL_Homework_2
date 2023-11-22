@@ -39,6 +39,6 @@ if __name__ == '__main__':
     np.random.seed(0)
     import random
     random.seed(0)
-    num_episodes = 20000
-    mean_rew = evaluate(num_episodes, True)
+    num_episodes = 20
+    mean_rew = evaluate(num_episodes, render)
     print("Mean reward over {} episodes: {}".format(num_episodes, mean_rew))

@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 def epsilon_greedy_action(env, Q, state, epsilon):
     # TODO choose the action with epsilon-greedy strategy  
-
     if np.random.rand() > epsilon:
         action = np.argmax(Q[state, :]) 
     else:
@@ -61,6 +60,8 @@ def sarsa_lambda(env, alpha=0.2, gamma=0.99, lambda_= 0.9, initial_epsilon=1.0, 
             # update current state
             state = next_state
             action = next_action
+        E = np.zeros((env.observation_space.n, env.action_space.n))
+
         
         # print(f"Episode {ep} finished after {ep_len} steps.")
 
