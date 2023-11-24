@@ -31,13 +31,13 @@ class RBFFeatureEncoder:
         self.high_x = env.observation_space.high[0]
         self.high_y = env.observation_space.high[1]
 
-        self.centers_x = np.linspace(self.low_x, self.high_x, self.num_rbf)
-        self.centers_y = np.linspace(self.low_y, self.high_y, self.num_rbf)
+        self.xs = np.linspace(self.low_x, self.high_x, self.num_rbf)
+        self.ys = np.linspace(self.low_y, self.high_y, self.num_rbf)
         
-        self.xs = np.meshgrid(self.centers_x, self.centers_y)[0].reshape(-1)
-        self.ys = np.meshgrid(self.centers_x, self.centers_y)[1].reshape(-1)
+        self.centers_x = np.meshgrid(self.xs,  self.ys)[0].reshape(-1)
+        self.centers_y = np.meshgrid(self.xs, self.ys)[1].reshape(-1)
 
-        self.centers = np.stack([self.xs , self.ys] , axis = 1 )
+        self.centers = np.stack([self.centers_x , self.centers_y] , axis = 1 )
         self.sigma_sq = 0.1
 
     def encode(self, state):
@@ -72,7 +72,7 @@ class TDLambda_LVFA:
         # TODO update the weights
         
         # Compute the td error
-        delta = reward + (1-done)*self.gamma*self.Q(s_prime_feats).max() - self.Q(s_feats)[action]
+        delta = reward + (1-done) * self.gamma*self.Q(s_prime_feats).max() - self.Q(s_feats)[action]
         
         # Update traces
         self.traces *= self.gamma*self.lambda_
@@ -94,7 +94,7 @@ class TDLambda_LVFA:
         if random.random()<epsilon:
             return self.env.action_space.sample()
         return self.policy(state)
-       
+
         
     def train(self, n_episodes=200, max_steps_per_episode=200): # do not touch
         print(f'ep | eval | epsilon | alpha')

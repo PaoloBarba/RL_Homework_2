@@ -12,8 +12,6 @@ def evaluate(fname, env=None, n_episodes=10, max_steps_per_episode=200, render=F
         env = gym.make('MountainCar-v0', render_mode='human')
 
     agent = TDLambda_LVFA.load(fname)
-
-
         
     rewards = []
     for episode in range(n_episodes):
@@ -52,9 +50,9 @@ def main():
         train(args.train)
 
     if args.evaluate:
-        evaluate(args.evaluate, render=args.render)
+        evaluate(args.evaluate, render= args.render)
 
-
+    
 
 
 if __name__ == '__main__':
